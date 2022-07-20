@@ -42,6 +42,7 @@ from densepose.vis.extractor import (
     DensePoseResultExtractor,
     create_extractor,
 )
+from tqdm import tqdm
 
 DOC = """Apply Net - a tool to print / visualize DensePose results
 """
@@ -99,11 +100,15 @@ class InferenceAction(Action):
             logger.warning(f"No input images for {args.input}")
             return
         context = cls.create_context(args, cfg)
-        for file_name in file_list:
-            img = read_image(file_name, format="BGR")  # predictor expects BGR image.
-            with torch.no_grad():
-                outputs = predictor(img)["instances"]
-                cls.execute_on_outputs(context, {"file_name": file_name, "image": img}, outputs)
+        pkl_dir = "/fashionpedia-training/dp_pickles"
+        for file_name in tqdm(file_list):
+            try:
+                img = read_image(file_name, format="BGR")  # predictor expects BGR image.
+                with torch.no_grad():
+                    outputs = predictor(img)["instances"]
+                    cls.execute_on_outputs(context, {"file_name": file_name, "image": img}, outputs, pkl_dir)
+            except:
+                print(f"Failed on {file_name}")
         cls.postexecute(context)
 
     @classmethod
@@ -161,7 +166,7 @@ class DumpAction(InferenceAction):
 
     @classmethod
     def execute_on_outputs(
-        cls: type, context: Dict[str, Any], entry: Dict[str, Any], outputs: Instances
+        cls: type, context: Dict[str, Any], entry: Dict[str, Any], outputs: Instances, pkl_dir: str,
     ):
         image_fpath = entry["file_name"]
         logger.info(f"Processing {image_fpath}")
@@ -177,6 +182,13 @@ class DumpAction(InferenceAction):
                     extractor = DensePoseOutputsExtractor()
                 result["pred_densepose"] = extractor(outputs)[0]
         context["results"].append(result)
+
+        img_basename = os.path.basename(image_fpath)[:-4]
+        pkl_fpath = os.path.join(pkl_dir, img_basename + '.pkl')
+        with open(pkl_fpath, "wb") as pkl_hFile:
+            pickle.dump(result, pkl_hFile)
+            logger.info(f"Output saved to {pkl_fpath}")
+
 
     @classmethod
     def create_context(cls: type, args: argparse.Namespace, cfg: CfgNode):
