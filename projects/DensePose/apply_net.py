@@ -100,15 +100,15 @@ class InferenceAction(Action):
             logger.warning(f"No input images for {args.input}")
             return
         context = cls.create_context(args, cfg)
-        pkl_dir = "/fashionpedia-training/dp_pickles"
+        pkl_dir = "raw_data_fashionpedia/dp_pickles"
         for file_name in tqdm(file_list):
             try:
                 img = read_image(file_name, format="BGR")  # predictor expects BGR image.
                 with torch.no_grad():
                     outputs = predictor(img)["instances"]
                     cls.execute_on_outputs(context, {"file_name": file_name, "image": img}, outputs, pkl_dir)
-            except:
-                print(f"Failed on {file_name}")
+            except Exception as e:
+                print(f"Failed on {file_name} with error {e}")
         cls.postexecute(context)
 
     @classmethod
@@ -282,7 +282,7 @@ class ShowAction(InferenceAction):
 
     @classmethod
     def execute_on_outputs(
-        cls: type, context: Dict[str, Any], entry: Dict[str, Any], outputs: Instances
+        cls: type, context: Dict[str, Any], entry: Dict[str, Any], outputs: Instances, pkl_dir: str,
     ):
         import cv2
         import numpy as np
