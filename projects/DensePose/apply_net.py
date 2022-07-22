@@ -42,7 +42,6 @@ from densepose.vis.extractor import (
     DensePoseResultExtractor,
     create_extractor,
 )
-from tqdm import tqdm
 
 DOC = """Apply Net - a tool to print / visualize DensePose results
 """
@@ -101,7 +100,7 @@ class InferenceAction(Action):
             return
         context = cls.create_context(args, cfg)
         pkl_dir = "raw_data_fashionpedia/dp_pickles"
-        for file_name in tqdm(file_list):
+        for file_name in file_list:
             try:
                 img = read_image(file_name, format="BGR")  # predictor expects BGR image.
                 with torch.no_grad():
