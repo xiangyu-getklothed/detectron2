@@ -99,7 +99,7 @@ class InferenceAction(Action):
             logger.warning(f"No input images for {args.input}")
             return
         context = cls.create_context(args, cfg)
-        pkl_dir = "raw_data_fashionpedia/dp_pickles"
+        pkl_dir = "/fashionpedia-training/dp_pickles"
         for file_name in file_list:
             try:
                 img = read_image(file_name, format="BGR")  # predictor expects BGR image.
@@ -173,13 +173,13 @@ class DumpAction(InferenceAction):
         if outputs.has("scores"):
             result["scores"] = outputs.get("scores").cpu()
         if outputs.has("pred_boxes"):
-            result["pred_boxes_XYXY"] = outputs.get("pred_boxes").tensor.cpu()
+            result["pred_boxes_XYXY"] = outputs.get("pred_boxes").tensor.cpu()[0]
             if outputs.has("pred_densepose"):
                 if isinstance(outputs.pred_densepose, DensePoseChartPredictorOutput):
                     extractor = DensePoseResultExtractor()
                 elif isinstance(outputs.pred_densepose, DensePoseEmbeddingPredictorOutput):
                     extractor = DensePoseOutputsExtractor()
-                result["pred_densepose"] = extractor(outputs)[0]
+                result["pred_densepose"] = extractor(outputs)[0][0]
         context["results"].append(result)
 
         img_basename = os.path.basename(image_fpath)[:-4]
